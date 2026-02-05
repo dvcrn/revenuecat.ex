@@ -4,6 +4,9 @@ defmodule Revenuecat.MixProject do
   def project do
     [
       app: :revenuecat,
+      description: "Minimal RevenueCat client",
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/dvcrn/revenuecat.ex"},
       version: "0.1.0",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
