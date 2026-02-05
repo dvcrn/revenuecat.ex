@@ -6,6 +6,8 @@ defmodule RevenueCatTest do
     Mox.set_mox_global()
     Application.put_env(:revenuecat, :client_adapter, RevenueCat.ClientMock)
     Application.put_env(:revenuecat, :api_key, "test_key")
+    Application.put_env(:revenuecat, :subscriber_cache_ttl_seconds, 120)
+    RevenueCat.SubscriberCache.clear()
     :ok
   end
 
@@ -13,7 +15,7 @@ defmodule RevenueCatTest do
     stub(RevenueCat.ClientMock, :do_request, fn _opts -> {:ok, production_body()} end)
 
     assert {:ok, subscriber} =
-             RevenueCat.fetch_subscriber("c5389bab-e858-44d0-826e-c64ee14d9730")
+             RevenueCat.get_subscriber("c5389bab-e858-44d0-826e-c64ee14d9730")
 
     entitlements = RevenueCat.entitlements(subscriber)
     assert Map.has_key?(entitlements, "pro")
@@ -29,7 +31,7 @@ defmodule RevenueCatTest do
     stub(RevenueCat.ClientMock, :do_request, fn _opts -> {:ok, production_body()} end)
 
     assert {:ok, subscriber} =
-             RevenueCat.fetch_subscriber("c5389bab-e858-44d0-826e-c64ee14d9730")
+             RevenueCat.get_subscriber("c5389bab-e858-44d0-826e-c64ee14d9730")
 
     assert RevenueCat.has_entitlement?(subscriber, "pro")
     assert RevenueCat.has_entitlement?(subscriber, :pro)
@@ -39,7 +41,7 @@ defmodule RevenueCatTest do
     stub(RevenueCat.ClientMock, :do_request, fn _opts -> {:ok, production_body()} end)
 
     assert {:ok, subscriber} =
-             RevenueCat.fetch_subscriber("c5389bab-e858-44d0-826e-c64ee14d9730")
+             RevenueCat.get_subscriber("c5389bab-e858-44d0-826e-c64ee14d9730")
 
     subs = RevenueCat.subscriptions(subscriber)
     assert Map.has_key?(subs, "example.product.web")
@@ -107,6 +109,27 @@ defmodule RevenueCatTest do
 
     assert {:ok, %RevenueCat.Subscriber{}} =
              RevenueCat.update_customer_attributes("test_user", attrs)
+  end
+
+  test "get_subscriber caches by ttl and fetch_subscriber bypasses cache" do
+    Application.put_env(:revenuecat, :subscriber_cache_ttl_seconds, 300)
+
+    expect(RevenueCat.ClientMock, :do_request, fn opts ->
+      assert opts[:method] == :get
+      assert String.ends_with?(opts[:url], "/v1/subscribers/test_user")
+      {:ok, production_body()}
+    end)
+
+    assert {:ok, subscriber} = RevenueCat.get_subscriber("test_user")
+    assert {:ok, ^subscriber} = RevenueCat.get_subscriber("test_user")
+
+    expect(RevenueCat.ClientMock, :do_request, fn opts ->
+      assert opts[:method] == :get
+      assert String.ends_with?(opts[:url], "/v1/subscribers/test_user")
+      {:ok, production_body()}
+    end)
+
+    assert {:ok, _subscriber} = RevenueCat.fetch_subscriber("test_user")
   end
 
   defp production_body do

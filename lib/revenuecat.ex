@@ -2,7 +2,7 @@ defmodule RevenueCat do
   @moduledoc """
   Minimal RevenueCat client.
 
-  Exposes `fetch_subscriber/1` as the sole network entrypoint.
+  Exposes `get_subscriber/1` (cached) and `fetch_subscriber/1` (remote).
   """
 
   @type entitlement_map :: map()
@@ -123,7 +123,25 @@ defmodule RevenueCat do
   def has_subscription?(_, _), do: false
 
   @doc """
-  Fetch a subscriber from RevenueCat by app user id.
+  Get a subscriber by app user id, using the subscriber cache when possible.
+  """
+  @spec get_subscriber(String.t()) ::
+          {:ok, RevenueCat.Subscriber.t()} | {:error, term()}
+  def get_subscriber(app_user_id)
+      when is_binary(app_user_id) and byte_size(app_user_id) > 0 do
+    case RevenueCat.SubscriberCache.get(app_user_id) do
+      {:ok, subscriber} ->
+        {:ok, subscriber}
+
+      :miss ->
+        fetch_subscriber(app_user_id)
+    end
+  end
+
+  def get_subscriber(_), do: {:error, :invalid_request}
+
+  @doc """
+  Fetch a subscriber by app user id, bypassing the subscriber cache.
   """
   @spec fetch_subscriber(String.t()) ::
           {:ok, RevenueCat.Subscriber.t()} | {:error, term()}
@@ -133,6 +151,7 @@ defmodule RevenueCat do
            RevenueCat.Client.do_request(:get, "/v1/subscribers/" <> URI.encode(app_user_id)),
          {:ok, decoded} <- Jason.decode(body),
          {:ok, subscriber} <- RevenueCat.Subscriber.from_response(decoded) do
+      cache_subscriber(app_user_id, subscriber)
       {:ok, subscriber}
     else
       {:error, reason} -> {:error, reason}
@@ -174,6 +193,11 @@ defmodule RevenueCat do
   end
 
   defp subscriber_from_update_response(_), do: {:error, :missing_subscriber}
+
+  defp cache_subscriber(app_user_id, %RevenueCat.Subscriber{} = subscriber) do
+    ttl_seconds = Application.get_env(:revenuecat, :subscriber_cache_ttl_seconds, 120)
+    RevenueCat.SubscriberCache.put(app_user_id, subscriber, ttl_seconds)
+  end
 
   defp normalize_attributes(attributes) when is_map(attributes) do
     Map.new(attributes, fn {key, value} -> {key, normalize_attribute_value(value)} end)

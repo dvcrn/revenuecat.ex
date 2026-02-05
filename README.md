@@ -30,10 +30,21 @@ config :revenuecat,
   client_adapter: RevenueCat.Client.Req
 ```
 
+Optional cache:
+
+```elixir
+config :revenuecat, subscriber_cache_ttl_seconds: 120
+```
+
 ## Usage
 
 ```elixir
+# get a subscriber (cached by subscriber_cache_ttl_seconds)
+{:ok, subscriber} = RevenueCat.get_subscriber(app_user_id)
+
+# always fetch a subscriber independent of cache value
 {:ok, subscriber} = RevenueCat.fetch_subscriber(app_user_id)
+
 
 IO.inspect(subscriber)
 
