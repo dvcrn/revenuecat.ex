@@ -1,4 +1,4 @@
-defmodule RevenueCat.Subscriber.Entitlement do
+defmodule RevenueCat.Customer.Entitlement do
   @moduledoc false
 
   @type t :: %__MODULE__{

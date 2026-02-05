@@ -9,7 +9,7 @@ Minimal RevenueCat client for Elixir
 ```elixir
 def deps do
   [
-    {:revenuecat, "~> 0.1.0"}
+    {:revenuecat, "~> 0.2.0"}
   ]
 end
 ```
@@ -33,48 +33,47 @@ config :revenuecat,
 Optional cache:
 
 ```elixir
-config :revenuecat, subscriber_cache_ttl_seconds: 120
+config :revenuecat, customer_cache_ttl_seconds: 120
 ```
 
 ## Usage
 
 ```elixir
-# get a subscriber (cached by subscriber_cache_ttl_seconds)
-{:ok, subscriber} = RevenueCat.get_subscriber(app_user_id)
+# get a customer (cached by customer_cache_ttl_seconds)
+{:ok, customer} = RevenueCat.get_customer(app_user_id)
 
-# always fetch a subscriber independent of cache value
-{:ok, subscriber} = RevenueCat.fetch_subscriber(app_user_id)
+# always fetch a customer independent of cache value
+{:ok, customer} = RevenueCat.fetch_customer(app_user_id)
 
-
-IO.inspect(subscriber)
+IO.inspect(customer)
 
 # Entitlements
-RevenueCat.entitlement(subscriber, "pro")
+RevenueCat.entitlement(customer, "pro")
 |> IO.inspect
 
-RevenueCat.has_entitlement?(subscriber, "pro")
+RevenueCat.has_entitlement?(customer, "pro")
 
-IO.inspect(subscriber.entitlements)
+IO.inspect(customer.entitlements)
 
 # Subscriptions
-RevenueCat.subscription(subscriber, "my_sub")
+RevenueCat.subscription(customer, "my_sub")
 |> IO.inspect
 
-RevenueCat.has_subscription?(subscriber, "my_subscription")
+RevenueCat.has_subscription?(customer, "my_subscription")
 
-IO.inspect(subscriber.subscriptions)
+IO.inspect(customer.subscriptions)
 
 # Attributes
-IO.inspect(subscriber.attributes)
+IO.inspect(customer.attributes)
 
-RevenueCat.attribute(subscriber, "$email")
+RevenueCat.attribute(customer, "$email")
 |> IO.inspect
 ```
 
 ### Add customer attributes:
 
 ```elixir
-{:ok, subscriber} =
+{:ok, customer} =
   RevenueCat.update_customer_attributes(app_user_id, %{
     "foo" => "bar"
   })

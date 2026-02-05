@@ -1,11 +1,11 @@
-defmodule RevenueCat.Subscriber do
+defmodule RevenueCat.Customer do
   @moduledoc """
-  Parsed subscriber response from RevenueCat.
+  Parsed customer response from RevenueCat.
   """
 
-  alias RevenueCat.Subscriber.Entitlement
-  alias RevenueCat.Subscriber.SubscriberAttribute
-  alias RevenueCat.Subscriber.Subscription
+  alias RevenueCat.Customer.Entitlement
+  alias RevenueCat.Customer.Attribute
+  alias RevenueCat.Customer.Subscription
 
   @type t :: %__MODULE__{
           request_date: String.t() | nil,
@@ -19,7 +19,7 @@ defmodule RevenueCat.Subscriber do
           original_application_version: String.t() | nil,
           original_purchase_date: String.t() | nil,
           other_purchases: map(),
-          attributes: %{optional(String.t()) => SubscriberAttribute.t()},
+          attributes: %{optional(String.t()) => Attribute.t()},
           subscriptions: %{optional(String.t()) => Subscription.t()}
         }
 
@@ -40,7 +40,7 @@ defmodule RevenueCat.Subscriber do
   ]
 
   @doc """
-  Build a subscriber struct from a RevenueCat response map.
+  Build a customer struct from a RevenueCat response map.
   """
   @spec from_response(map()) :: {:ok, t()} | {:error, term()}
   def from_response(%{"subscriber" => subscriber} = response) when is_map(subscriber) do
@@ -57,8 +57,7 @@ defmodule RevenueCat.Subscriber do
        original_application_version: subscriber["original_application_version"],
        original_purchase_date: subscriber["original_purchase_date"],
        other_purchases: Map.get(subscriber, "other_purchases", %{}),
-       attributes:
-         SubscriberAttribute.map_from(Map.get(subscriber, "subscriber_attributes", %{})),
+       attributes: Attribute.map_from(Map.get(subscriber, "subscriber_attributes", %{})),
        subscriptions: Subscription.map_from(Map.get(subscriber, "subscriptions", %{}))
      }}
   end

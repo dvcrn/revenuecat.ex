@@ -1,4 +1,4 @@
-defmodule RevenueCat.Subscriber.Subscription.Price do
+defmodule RevenueCat.Customer.Subscription.Price do
   @moduledoc false
 
   @type t :: %__MODULE__{

@@ -6,61 +6,61 @@ defmodule RevenueCatTest do
     Mox.set_mox_global()
     Application.put_env(:revenuecat, :client_adapter, RevenueCat.ClientMock)
     Application.put_env(:revenuecat, :api_key, "test_key")
-    Application.put_env(:revenuecat, :subscriber_cache_ttl_seconds, 120)
-    RevenueCat.SubscriberCache.clear()
+    Application.put_env(:revenuecat, :customer_cache_ttl_seconds, 120)
+    RevenueCat.CustomerCache.clear()
     :ok
   end
 
   test "fetches entitlements via mocked client" do
     stub(RevenueCat.ClientMock, :do_request, fn _opts -> {:ok, production_body()} end)
 
-    assert {:ok, subscriber} =
-             RevenueCat.get_subscriber("c5389bab-e858-44d0-826e-c64ee14d9730")
+    assert {:ok, customer} =
+             RevenueCat.get_customer("c5389bab-e858-44d0-826e-c64ee14d9730")
 
-    entitlements = RevenueCat.entitlements(subscriber)
+    entitlements = RevenueCat.entitlements(customer)
     assert Map.has_key?(entitlements, "pro")
-    assert RevenueCat.entitlement(subscriber, "pro") != nil
-    assert RevenueCat.entitlement(subscriber, "missing") == nil
+    assert RevenueCat.entitlement(customer, "pro") != nil
+    assert RevenueCat.entitlement(customer, "missing") == nil
 
-    assert RevenueCat.has_entitlement?(subscriber, "pro")
-    assert RevenueCat.has_entitlement?(subscriber, :pro)
-    refute RevenueCat.has_entitlement?(subscriber, "missing")
+    assert RevenueCat.has_entitlement?(customer, "pro")
+    assert RevenueCat.has_entitlement?(customer, :pro)
+    refute RevenueCat.has_entitlement?(customer, "missing")
   end
 
-  test "has_entitlement? supports subscriber and atom" do
+  test "has_entitlement? supports customer and atom" do
     stub(RevenueCat.ClientMock, :do_request, fn _opts -> {:ok, production_body()} end)
 
-    assert {:ok, subscriber} =
-             RevenueCat.get_subscriber("c5389bab-e858-44d0-826e-c64ee14d9730")
+    assert {:ok, customer} =
+             RevenueCat.get_customer("c5389bab-e858-44d0-826e-c64ee14d9730")
 
-    assert RevenueCat.has_entitlement?(subscriber, "pro")
-    assert RevenueCat.has_entitlement?(subscriber, :pro)
+    assert RevenueCat.has_entitlement?(customer, "pro")
+    assert RevenueCat.has_entitlement?(customer, :pro)
   end
 
   test "subscriptions and attribute helpers" do
     stub(RevenueCat.ClientMock, :do_request, fn _opts -> {:ok, production_body()} end)
 
-    assert {:ok, subscriber} =
-             RevenueCat.get_subscriber("c5389bab-e858-44d0-826e-c64ee14d9730")
+    assert {:ok, customer} =
+             RevenueCat.get_customer("c5389bab-e858-44d0-826e-c64ee14d9730")
 
-    subs = RevenueCat.subscriptions(subscriber)
+    subs = RevenueCat.subscriptions(customer)
     assert Map.has_key?(subs, "example.product.web")
 
-    assert %RevenueCat.Subscriber.Subscription{} =
-             RevenueCat.subscription(subscriber, "example.product.web")
+    assert %RevenueCat.Customer.Subscription{} =
+             RevenueCat.subscription(customer, "example.product.web")
 
-    assert %RevenueCat.Subscriber.Subscription{} =
-             RevenueCat.subscription(subscriber, :"example.product.web")
+    assert %RevenueCat.Customer.Subscription{} =
+             RevenueCat.subscription(customer, :"example.product.web")
 
-    assert RevenueCat.subscription(subscriber, "missing") == nil
-    assert RevenueCat.has_subscription?(subscriber, "example.product.web")
-    assert RevenueCat.has_subscription?(subscriber, :"example.product.web")
-    refute RevenueCat.has_subscription?(subscriber, "missing")
+    assert RevenueCat.subscription(customer, "missing") == nil
+    assert RevenueCat.has_subscription?(customer, "example.product.web")
+    assert RevenueCat.has_subscription?(customer, :"example.product.web")
+    refute RevenueCat.has_subscription?(customer, "missing")
 
-    assert %RevenueCat.Subscriber.SubscriberAttribute{} =
-             RevenueCat.attribute(subscriber, "$email")
+    assert %RevenueCat.Customer.Attribute{} =
+             RevenueCat.attribute(customer, "$email")
 
-    assert RevenueCat.attribute(subscriber, "missing") == nil
+    assert RevenueCat.attribute(customer, "missing") == nil
   end
 
   test "update_customer_attributes posts attributes payload" do
@@ -83,15 +83,15 @@ defmodule RevenueCatTest do
       {:ok, update_response_body()}
     end)
 
-    assert {:ok, subscriber} =
+    assert {:ok, customer} =
              RevenueCat.update_customer_attributes("test_user", attrs)
 
-    assert %RevenueCat.Subscriber{} = subscriber
-    assert RevenueCat.has_entitlement?(subscriber, "pro_cat")
-    assert RevenueCat.has_subscription?(subscriber, "annual")
+    assert %RevenueCat.Customer{} = customer
+    assert RevenueCat.has_entitlement?(customer, "pro_cat")
+    assert RevenueCat.has_subscription?(customer, "annual")
   end
 
-  test "update_customer_attributes falls back to fetch_subscriber on empty response" do
+  test "update_customer_attributes falls back to fetch_customer on empty response" do
     attrs = %{"foo" => ""}
 
     expect(RevenueCat.ClientMock, :do_request, fn opts ->
@@ -107,12 +107,12 @@ defmodule RevenueCatTest do
       {:ok, production_body()}
     end)
 
-    assert {:ok, %RevenueCat.Subscriber{}} =
+    assert {:ok, %RevenueCat.Customer{}} =
              RevenueCat.update_customer_attributes("test_user", attrs)
   end
 
-  test "get_subscriber caches by ttl and fetch_subscriber bypasses cache" do
-    Application.put_env(:revenuecat, :subscriber_cache_ttl_seconds, 300)
+  test "get_customer caches by ttl and fetch_customer bypasses cache" do
+    Application.put_env(:revenuecat, :customer_cache_ttl_seconds, 300)
 
     expect(RevenueCat.ClientMock, :do_request, fn opts ->
       assert opts[:method] == :get
@@ -120,8 +120,8 @@ defmodule RevenueCatTest do
       {:ok, production_body()}
     end)
 
-    assert {:ok, subscriber} = RevenueCat.get_subscriber("test_user")
-    assert {:ok, ^subscriber} = RevenueCat.get_subscriber("test_user")
+    assert {:ok, customer} = RevenueCat.get_customer("test_user")
+    assert {:ok, ^customer} = RevenueCat.get_customer("test_user")
 
     expect(RevenueCat.ClientMock, :do_request, fn opts ->
       assert opts[:method] == :get
@@ -129,7 +129,7 @@ defmodule RevenueCatTest do
       {:ok, production_body()}
     end)
 
-    assert {:ok, _subscriber} = RevenueCat.fetch_subscriber("test_user")
+    assert {:ok, _customer} = RevenueCat.fetch_customer("test_user")
   end
 
   defp production_body do

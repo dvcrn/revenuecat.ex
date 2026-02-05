@@ -1,7 +1,7 @@
-defmodule RevenueCat.Subscriber.Subscription do
+defmodule RevenueCat.Customer.Subscription do
   @moduledoc false
 
-  alias RevenueCat.Subscriber.Subscription.Price
+  alias RevenueCat.Customer.Subscription.Price
 
   @type t :: %__MODULE__{
           auto_resume_date: String.t() | nil,

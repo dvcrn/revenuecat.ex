@@ -1,4 +1,4 @@
-defmodule RevenueCat.Subscriber.SubscriberAttribute do
+defmodule RevenueCat.Customer.Attribute do
   @moduledoc false
 
   @type t :: %__MODULE__{
@@ -9,7 +9,7 @@ defmodule RevenueCat.Subscriber.SubscriberAttribute do
   defstruct [:updated_at_ms, :value]
 
   @doc """
-  Build a subscriber attribute struct from a map.
+  Build a customer attribute struct from a map.
   """
   @spec from_map(map()) :: t()
   def from_map(map) when is_map(map) do
@@ -20,7 +20,7 @@ defmodule RevenueCat.Subscriber.SubscriberAttribute do
   end
 
   @doc """
-  Build a subscriber attribute map keyed by attribute name.
+  Build a customer attribute map keyed by attribute name.
   """
   @spec map_from(map()) :: %{optional(String.t()) => t()}
   def map_from(attrs) when is_map(attrs) do
