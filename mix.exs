@@ -4,13 +4,12 @@ defmodule Revenuecat.MixProject do
   def project do
     [
       app: :revenuecat,
-      description: "Minimal RevenueCat client",
-      licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/dvcrn/revenuecat.ex"},
+      description: "Light RevenueCat client",
       version: "0.1.0",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      package: package(),
       aliases: aliases()
     ]
   end
@@ -28,8 +27,16 @@ defmodule Revenuecat.MixProject do
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
       {:mox, "~> 1.1", only: :test},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: :dev, runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/dvcrn/revenuecat.ex"}
     ]
   end
 
