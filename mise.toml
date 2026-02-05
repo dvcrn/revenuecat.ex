@@ -1,0 +1,15 @@
+[tools]
+elixir = "latest"
+erlang = "latest"
+
+[tasks.test]
+run = "mix test"
+description = "Run tests"
+
+[tasks.format]
+run = "mix format"
+description = "Format code"
+
+[tasks.lint]
+run = "mix lint"
+description = "Run credo and dialyzer"

@@ -1,0 +1,4 @@
+- Always run `mise format` after a task
+- Before something is considered finished, `mix lint` has to pass
+- All code needs to be tested
+    - We're using the adapter() pattern with mox in test_helpers.exs
