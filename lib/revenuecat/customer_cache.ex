@@ -6,22 +6,7 @@ defmodule RevenueCat.CustomerCache do
   @type cache_entry :: {RevenueCat.Customer.t(), integer()}
 
   def get(app_user_id) when is_binary(app_user_id) and app_user_id != "" do
-    if ttl_seconds() <= 0 do
-      :miss
-    else
-      ensure_started()
-      now = now_seconds()
-
-      Agent.get_and_update(__MODULE__, fn state ->
-        case Map.get(state, app_user_id) do
-          {customer, expires_at} = entry when expires_at > now ->
-            {{:ok, customer}, Map.put(state, app_user_id, entry)}
-
-          _ ->
-            {:miss, Map.delete(state, app_user_id)}
-        end
-      end)
-    end
+    if ttl_seconds() <= 0, do: :miss, else: get_from_cache(app_user_id)
   end
 
   def get(_), do: :miss
@@ -42,6 +27,25 @@ defmodule RevenueCat.CustomerCache do
     ensure_started()
     Agent.update(__MODULE__, fn _ -> %{} end)
     :ok
+  end
+
+  defp get_from_cache(app_user_id) do
+    ensure_started()
+    now = now_seconds()
+
+    Agent.get_and_update(__MODULE__, fn state ->
+      fetch_entry(state, app_user_id, now)
+    end)
+  end
+
+  defp fetch_entry(state, app_user_id, now) do
+    case Map.get(state, app_user_id) do
+      {customer, expires_at} = entry when expires_at > now ->
+        {{:ok, customer}, Map.put(state, app_user_id, entry)}
+
+      _ ->
+        {:miss, Map.delete(state, app_user_id)}
+    end
   end
 
   defp ensure_started do

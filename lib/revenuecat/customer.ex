@@ -3,8 +3,8 @@ defmodule RevenueCat.Customer do
   Parsed customer response from RevenueCat.
   """
 
-  alias RevenueCat.Customer.Entitlement
   alias RevenueCat.Customer.Attribute
+  alias RevenueCat.Customer.Entitlement
   alias RevenueCat.Customer.Subscription
 
   @type t :: %__MODULE__{
