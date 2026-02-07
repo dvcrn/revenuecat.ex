@@ -5,6 +5,10 @@ defmodule RevenueCat.CustomerCache do
 
   @type cache_entry :: {RevenueCat.Customer.t(), integer()}
 
+  def start_link(_opts) do
+    Agent.start_link(fn -> %{} end, name: __MODULE__)
+  end
+
   def get(app_user_id) when is_binary(app_user_id) and app_user_id != "" do
     if ttl_seconds() <= 0, do: :miss, else: get_from_cache(app_user_id)
   end
@@ -14,7 +18,6 @@ defmodule RevenueCat.CustomerCache do
   def put(app_user_id, %RevenueCat.Customer{} = customer, ttl_seconds)
       when is_binary(app_user_id) and app_user_id != "" and is_integer(ttl_seconds) and
              ttl_seconds > 0 do
-    ensure_started()
     expires_at = now_seconds() + ttl_seconds
     entry = {customer, expires_at}
     Agent.update(__MODULE__, &Map.put(&1, app_user_id, entry))
@@ -24,13 +27,11 @@ defmodule RevenueCat.CustomerCache do
   def put(_, _, _), do: :ok
 
   def clear do
-    ensure_started()
     Agent.update(__MODULE__, fn _ -> %{} end)
     :ok
   end
 
   defp get_from_cache(app_user_id) do
-    ensure_started()
     now = now_seconds()
 
     Agent.get_and_update(__MODULE__, fn state ->
@@ -45,14 +46,6 @@ defmodule RevenueCat.CustomerCache do
 
       _ ->
         {:miss, Map.delete(state, app_user_id)}
-    end
-  end
-
-  defp ensure_started do
-    case Agent.start_link(fn -> %{} end, name: __MODULE__) do
-      {:ok, _pid} -> :ok
-      {:error, {:already_started, _pid}} -> :ok
-      {:error, _} -> :ok
     end
   end
 
