@@ -132,6 +132,39 @@ defmodule RevenueCatTest do
     assert {:ok, _customer} = RevenueCat.fetch_customer("test_user")
   end
 
+  test "get_offerings fetches offerings (optionally with platform header)" do
+    expect(RevenueCat.ClientMock, :do_request, fn opts ->
+      assert opts[:method] == :get
+      assert String.ends_with?(opts[:url], "/v1/subscribers/test_user/offerings")
+
+      assert Enum.any?(opts[:headers], fn
+               {"x-platform", "ios"} -> true
+               _ -> false
+             end)
+
+      {:ok, offerings_body()}
+    end)
+
+    assert {:ok, offerings} = RevenueCat.get_offerings("test_user", platform: "ios")
+    assert %RevenueCat.Offerings{} = offerings
+    assert offerings.current_offering_id == "default"
+    assert length(offerings.offerings) == 2
+  end
+
+  test "get_offerings supports a value-wrapped response" do
+    expect(RevenueCat.ClientMock, :do_request, fn _opts ->
+      {:ok, value_wrapped_offerings_body()}
+    end)
+
+    assert {:ok, %RevenueCat.Offerings{current_offering_id: "default"}} =
+             RevenueCat.get_offerings("test_user")
+  end
+
+  test "get_offerings returns invalid_request on invalid platform" do
+    assert {:error, :invalid_request} = RevenueCat.get_offerings("test_user", platform: 123)
+    assert {:error, :invalid_request} = RevenueCat.get_offerings("test_user", platform: "")
+  end
+
   defp production_body do
     """
     {
@@ -183,6 +216,42 @@ defmodule RevenueCatTest do
           }
         }
       }
+    }
+    """
+  end
+
+  defp offerings_body do
+    """
+    {
+      "current_offering_id": "default",
+      "offerings": [
+        {
+          "description": "The default offering",
+          "identifier": "default",
+          "packages": [
+            { "identifier": "$rc_monthly", "platform_product_identifier": "monthly_free_trial" },
+            { "identifier": "consumable", "platform_product_identifier": "consumable1" },
+            { "identifier": "$rc_annual", "platform_product_identifier": "yearly_free_trial" }
+          ]
+        },
+        {
+          "description": "The sale offering",
+          "identifier": "sale_offering",
+          "packages": [
+            { "identifier": "$rc_monthly", "platform_product_identifier": "monthly_free_trial_sale" },
+            { "identifier": "consumable", "platform_product_identifier": "consumable1_sale" },
+            { "identifier": "$rc_annual", "platform_product_identifier": "yearly_free_trial_sale" }
+          ]
+        }
+      ]
+    }
+    """
+  end
+
+  defp value_wrapped_offerings_body do
+    """
+    {
+      "value": #{offerings_body()}
     }
     """
   end

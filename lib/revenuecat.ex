@@ -7,6 +7,8 @@ defmodule RevenueCat do
 
   @type entitlement_map :: map()
 
+  alias RevenueCat.Offerings
+
   @doc """
   Return the entitlements map from a customer.
 
@@ -184,6 +186,31 @@ defmodule RevenueCat do
 
   def update_customer_attributes(_, _), do: {:error, :invalid_request}
 
+  @doc """
+  Get Offerings for a given `app_user_id`.
+
+  This endpoint can optionally take a `:platform` (string) which will be sent
+  as the `X-Platform` header (lower-cased to `x-platform`), e.g. `"ios"`.
+  """
+  @spec get_offerings(String.t(), keyword()) :: {:ok, Offerings.t()} | {:error, term()}
+  def get_offerings(app_user_id, opts \\ [])
+
+  def get_offerings(app_user_id, opts)
+      when is_binary(app_user_id) and byte_size(app_user_id) > 0 and is_list(opts) do
+    path = "/v1/subscribers/" <> URI.encode(app_user_id) <> "/offerings"
+
+    with {:ok, headers} <- offerings_headers(opts),
+         {:ok, body} <- RevenueCat.Client.do_request(:get, path, headers: headers),
+         {:ok, decoded} <- Jason.decode(body),
+         {:ok, offerings} <- Offerings.from_response(decoded) do
+      {:ok, offerings}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def get_offerings(_, _), do: {:error, :invalid_request}
+
   defp customer_from_update_response(%{"value" => value}) when is_map(value) do
     RevenueCat.Customer.from_response(value)
   end
@@ -215,5 +242,21 @@ defmodule RevenueCat do
 
   defp normalize_attribute_value(value) do
     %{"value" => to_string(value)}
+  end
+
+  defp offerings_headers(opts) when is_list(opts) do
+    case Keyword.fetch(opts, :platform) do
+      :error ->
+        {:ok, []}
+
+      {:ok, nil} ->
+        {:ok, []}
+
+      {:ok, platform} when is_binary(platform) and platform != "" ->
+        {:ok, [{"x-platform", platform}]}
+
+      {:ok, _} ->
+        {:error, :invalid_request}
+    end
   end
 end

@@ -79,6 +79,15 @@ RevenueCat.attribute(customer, "$email")
   })
 ```
 
+### Get offerings:
+
+```elixir
+{:ok, offerings} = RevenueCat.get_offerings(app_user_id)
+
+# Optionally pass X-Platform as `platform:` (useful with legacy public API keys)
+{:ok, offerings} = RevenueCat.get_offerings(app_user_id, platform: "ios")
+```
+
 ## License
 
 MIT
