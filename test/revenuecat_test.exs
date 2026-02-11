@@ -160,6 +160,29 @@ defmodule RevenueCatTest do
              RevenueCat.fetch_offerings("test_user")
   end
 
+  test "offering and current_offering helpers" do
+    offerings = %RevenueCat.Offerings{
+      current_offering_id: "default",
+      offerings: [
+        %RevenueCat.Offerings.Offering{identifier: "default", description: "Default"},
+        %RevenueCat.Offerings.Offering{identifier: "sale", description: "Sale"}
+      ]
+    }
+
+    assert %RevenueCat.Offerings.Offering{identifier: "default"} =
+             RevenueCat.offering(offerings, "default")
+
+    assert %RevenueCat.Offerings.Offering{identifier: "sale"} =
+             RevenueCat.offering(offerings, :sale)
+
+    assert RevenueCat.offering(offerings, "missing") == nil
+
+    assert %RevenueCat.Offerings.Offering{identifier: "default"} =
+             RevenueCat.current_offering(offerings)
+
+    assert RevenueCat.current_offering(%RevenueCat.Offerings{current_offering_id: nil}) == nil
+  end
+
   test "fetch_offerings returns invalid_request on invalid platform" do
     assert {:error, :invalid_request} = RevenueCat.fetch_offerings("test_user", platform: 123)
     assert {:error, :invalid_request} = RevenueCat.fetch_offerings("test_user", platform: "")

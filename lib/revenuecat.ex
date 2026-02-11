@@ -125,6 +125,33 @@ defmodule RevenueCat do
   def has_subscription?(_, _), do: false
 
   @doc """
+  Fetch a single offering struct by id from an Offerings struct.
+  """
+  @spec offering(RevenueCat.Offerings.t(), String.t() | atom()) ::
+          RevenueCat.Offerings.Offering.t() | nil
+  def offering(%RevenueCat.Offerings{} = offerings, offering_id) when is_atom(offering_id) do
+    offering(offerings, Atom.to_string(offering_id))
+  end
+
+  def offering(%RevenueCat.Offerings{} = offerings, offering_id)
+      when is_binary(offering_id) and offering_id != "" do
+    Enum.find(offerings.offerings, fn o -> o.identifier == offering_id end)
+  end
+
+  def offering(_, _), do: nil
+
+  @doc """
+  Fetch the current offering struct from an Offerings struct.
+  """
+  @spec current_offering(RevenueCat.Offerings.t()) :: RevenueCat.Offerings.Offering.t() | nil
+  def current_offering(%RevenueCat.Offerings{current_offering_id: id} = offerings)
+      when is_binary(id) and id != "" do
+    offering(offerings, id)
+  end
+
+  def current_offering(_), do: nil
+
+  @doc """
   Get a customer by app user id, using the customer cache when possible.
   """
   @spec get_customer(String.t()) ::
