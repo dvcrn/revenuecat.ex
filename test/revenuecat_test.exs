@@ -132,7 +132,7 @@ defmodule RevenueCatTest do
     assert {:ok, _customer} = RevenueCat.fetch_customer("test_user")
   end
 
-  test "get_offerings fetches offerings (optionally with platform header)" do
+  test "fetch_offerings fetches offerings (optionally with platform header)" do
     expect(RevenueCat.ClientMock, :do_request, fn opts ->
       assert opts[:method] == :get
       assert String.ends_with?(opts[:url], "/v1/subscribers/test_user/offerings")
@@ -145,24 +145,24 @@ defmodule RevenueCatTest do
       {:ok, offerings_body()}
     end)
 
-    assert {:ok, offerings} = RevenueCat.get_offerings("test_user", platform: "ios")
+    assert {:ok, offerings} = RevenueCat.fetch_offerings("test_user", platform: "ios")
     assert %RevenueCat.Offerings{} = offerings
     assert offerings.current_offering_id == "default"
     assert length(offerings.offerings) == 2
   end
 
-  test "get_offerings supports a value-wrapped response" do
+  test "fetch_offerings supports a value-wrapped response" do
     expect(RevenueCat.ClientMock, :do_request, fn _opts ->
       {:ok, value_wrapped_offerings_body()}
     end)
 
     assert {:ok, %RevenueCat.Offerings{current_offering_id: "default"}} =
-             RevenueCat.get_offerings("test_user")
+             RevenueCat.fetch_offerings("test_user")
   end
 
-  test "get_offerings returns invalid_request on invalid platform" do
-    assert {:error, :invalid_request} = RevenueCat.get_offerings("test_user", platform: 123)
-    assert {:error, :invalid_request} = RevenueCat.get_offerings("test_user", platform: "")
+  test "fetch_offerings returns invalid_request on invalid platform" do
+    assert {:error, :invalid_request} = RevenueCat.fetch_offerings("test_user", platform: 123)
+    assert {:error, :invalid_request} = RevenueCat.fetch_offerings("test_user", platform: "")
   end
 
   defp production_body do

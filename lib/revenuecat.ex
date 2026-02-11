@@ -192,10 +192,10 @@ defmodule RevenueCat do
   This endpoint can optionally take a `:platform` (string) which will be sent
   as the `X-Platform` header (lower-cased to `x-platform`), e.g. `"ios"`.
   """
-  @spec get_offerings(String.t(), keyword()) :: {:ok, Offerings.t()} | {:error, term()}
-  def get_offerings(app_user_id, opts \\ [])
+  @spec fetch_offerings(String.t(), keyword()) :: {:ok, Offerings.t()} | {:error, term()}
+  def fetch_offerings(app_user_id, opts \\ [])
 
-  def get_offerings(app_user_id, opts)
+  def fetch_offerings(app_user_id, opts)
       when is_binary(app_user_id) and byte_size(app_user_id) > 0 and is_list(opts) do
     path = "/v1/subscribers/" <> URI.encode(app_user_id) <> "/offerings"
 
@@ -209,7 +209,7 @@ defmodule RevenueCat do
     end
   end
 
-  def get_offerings(_, _), do: {:error, :invalid_request}
+  def fetch_offerings(_, _), do: {:error, :invalid_request}
 
   defp customer_from_update_response(%{"value" => value}) when is_map(value) do
     RevenueCat.Customer.from_response(value)
